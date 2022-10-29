@@ -22,7 +22,7 @@ class CPA1110:
     CoolantInTemperature = FloatProperty(6, 7)
     CoolantOutTemperature = FloatProperty(8, 9)
     OilTemperature = FloatProperty(10, 11)
-    HeliumTemperature = (FloatProperty(12, 13),)
+    HeliumTemperature = FloatProperty(12, 13)
     LowPressure = FloatProperty(14, 15)
     LowPressureAverage = FloatProperty(16, 17)
     HighPressure = FloatProperty(18, 19)
@@ -43,7 +43,7 @@ class CPA1110:
                 parity="E",
                 baudrate=9600,
             )
-        elif connection_type == Connection.NETWORK:
+        elif connection_type == Connection.TCP:
             # assert port is not None, 'Supply a port number'
             # verify IP address is in a valid format
             ip_address(resource_name)

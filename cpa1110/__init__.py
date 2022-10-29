@@ -1,5 +1,12 @@
 from .device import CPA1110
-from .enums import Connection, OperatingState, PressureUnits, TemperatureUnits
+from .enums import (
+    Connection,
+    OperatingState,
+    PressureUnits,
+    TemperatureUnits,
+    Warnings,
+    Errors,
+)
 
 __all__ = [
     "CPA1110",
@@ -7,4 +14,6 @@ __all__ = [
     "TemperatureUnits",
     "PressureUnits",
     "OperatingState",
+    "Warnings",
+    "Errors",
 ]

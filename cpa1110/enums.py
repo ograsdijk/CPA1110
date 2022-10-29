@@ -3,7 +3,7 @@ from enum import IntEnum, auto
 
 class Connection(IntEnum):
     SERIAL = auto()
-    NETWORK = auto()
+    TCP = auto()
 
 
 class TemperatureUnits(IntEnum):
