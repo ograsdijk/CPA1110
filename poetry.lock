@@ -1,0 +1,25 @@
+[[package]]
+name = "pymodbus"
+version = "3.0.0"
+description = "A fully featured modbus protocol stack in python"
+category = "main"
+optional = false
+python-versions = ">=3.8.0"
+
+[package.extras]
+datastore = ["redis (>=2.10.6)", "sqlalchemy (>=1.1.15)"]
+development_ = ["bandit (==1.7.4)", "black (==22.3.0)", "codespell (==2.1.0)", "coverage (==6.4)", "flake8 (==4.0.1)", "flake8-comprehensions (==3.10.0)", "flake8-docstrings (==1.6.0)", "flake8-noqa (==1.2.2)", "isort (==5.10.1)", "pep8 (==1.7.1)", "pycodestyle (==2.8.0)", "pydocstyle (==6.1.1)", "pyflakes (==2.4.0)", "pylint (==2.14.5)", "pytest (==7.1.2)", "pytest-asyncio (==0.18.3)", "pytest-cov (==3.0.0)", "pytest-timeout (==2.1.0)", "tox (==3.25.0)"]
+documentation = ["Sphinx", "humanfriendly", "m2r2", "recommonmark", "sphinx-rtd-theme"]
+repl = ["aiohttp (>=3.8.1)", "prompt-toolkit (==3.0.8)", "typer[all] (>=0.6.1)"]
+serial = ["pyserial (>=3.5)", "pyserial-asyncio (==0.6)"]
+
+[metadata]
+lock-version = "1.1"
+python-versions = "^3.9"
+content-hash = "11d2f3a1638061449f9659090eb075c222f4c11c738457ba6a6815a7879d75ed"
+
+[metadata.files]
+pymodbus = [
+    {file = "pymodbus-3.0.0-py2.py3-none-any.whl", hash = "sha256:9ffb15dad6f41fc828780779b70786c5d1b6e99d77a870e3ee54d933620e4efe"},
+    {file = "pymodbus-3.0.0.tar.gz", hash = "sha256:37c9b6f3e5c82f39ee42047ca48cbc9fd0c49a6731126789500191e9deea6cbc"},
+]
