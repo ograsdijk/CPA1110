@@ -2,11 +2,11 @@ import struct
 
 # utility functions (see manual pp 21-22)
 def to_float(b12, b34) -> float:
-    return struct.unpack("f", struct.pack("H", b12) + struct.pack("H", b34))
+    return struct.unpack("f", struct.pack("H", b12) + struct.pack("H", b34))[0]
 
 
 def to_int(b12, b34) -> int:
-    return struct.unpack("i", struct.pack("H", b12) + struct.pack("H", b34))
+    return struct.unpack("i", struct.pack("H", b12) + struct.pack("H", b34))[0]
 
 
 class FloatProperty:
@@ -16,7 +16,7 @@ class FloatProperty:
         self._index2 = index2
 
     def __get__(self, instance, owner) -> float:
-        return to_float(instance._rr(self._index1), instance._rr(self._index2))
+        return to_float(instance._rr.registers[self._index1], instance._rr.registers[self._index2])
 
     def __set__(self, instance, value) -> None:
         if self._read_only:
