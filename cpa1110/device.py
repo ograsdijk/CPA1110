@@ -32,7 +32,10 @@ class CPA1110:
     HoursOfOperation = FloatProperty(26, 27)
 
     def __init__(
-        self, resource_name: str, connection_type: Connection, port: Optional[int] = None
+        self,
+        resource_name: str,
+        connection_type: Connection,
+        port: Optional[int] = None,
     ) -> None:
         if connection_type == Connection.SERIAL:
             self.client = client.ModbusSerialClient(
