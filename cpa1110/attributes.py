@@ -16,7 +16,10 @@ class FloatProperty:
         self._index2 = index2
 
     def __get__(self, instance, owner) -> float:
-        return to_float(instance._rr.registers[self._index1], instance._rr.registers[self._index2])
+        instance._rr = instance._read_input_register_response()
+        return to_float(
+            instance._rr.registers[self._index1], instance._rr.registers[self._index2]
+        )
 
     def __set__(self, instance, value) -> None:
         if self._read_only:

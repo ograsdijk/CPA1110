@@ -1,5 +1,6 @@
+from functools import wraps
 from ipaddress import ip_address
-from typing import Optional
+from typing import Callable, Optional
 
 from pymodbus import client
 from pymodbus.exceptions import ModbusIOException
@@ -16,6 +17,15 @@ from .enums import (
     Warnings,
     Errors,
 )
+
+
+def _read_input_register(func: Callable) -> Callable:
+    @wraps
+    def wrapper(self, *args, **kwargs):
+        self._rr = self._read_input_register_reponse()
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class CPA1110:
@@ -87,6 +97,7 @@ class CPA1110:
             return read_input_register_response
 
     @property
+    @_read_input_register
     def OperatingState(self) -> OperatingState:
         state = to_int(self._rr.registers[0], 0)
         for operating_state in OperatingState:
@@ -95,6 +106,7 @@ class CPA1110:
         return OperatingState.NA
 
     @property
+    @_read_input_register
     def Warnings(self) -> Warnings:
         """
         0: No warnings
@@ -121,6 +133,7 @@ class CPA1110:
         return Warnings(warning)
 
     @property
+    @_read_input_register
     def Errors(self) -> Errors:
         """
         0: No Errors
@@ -148,6 +161,7 @@ class CPA1110:
         return Errors(error)
 
     @property
+    @_read_input_register
     def PressureUnits(self) -> PressureUnits:
         state = to_int(self._rr.registers[28], 0)
         for unit in PressureUnits:
@@ -156,6 +170,7 @@ class CPA1110:
         return PressureUnits.NA
 
     @property
+    @_read_input_register
     def TemperatureUnits(self) -> TemperatureUnits:
         state = to_int(self._rr.registers[29], 0)
         for unit in TemperatureUnits:
@@ -164,10 +179,12 @@ class CPA1110:
         return TemperatureUnits.NA
 
     @property
+    @_read_input_register
     def PanelSerialNumber(self):
         return to_int(self._rr.registers[30], 0)
 
     @property
+    @_read_input_register
     def ModelNumber(self) -> int:
         """
         The upper 8 bits contain the Major model number and
@@ -197,5 +214,6 @@ class CPA1110:
         return to_int(self._rr.registers[31], 0)
 
     @property
+    @_read_input_register
     def SoftwareRev(self) -> int:
         return to_int(self._rr.registers[32], 0)
