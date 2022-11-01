@@ -3,7 +3,7 @@ from typing import Optional
 
 from pymodbus import client
 from pymodbus.exceptions import ModbusIOException
-from pymodbus.framer import rtu_framer
+from pymodbus.framer import rtu_framer, socket_framer
 from pymodbus.register_read_message import ReadInputRegistersResponse
 
 from cpa1110.attributes import FloatProperty, to_int
@@ -32,12 +32,12 @@ class CPA1110:
     HoursOfOperation = FloatProperty(26, 27)
 
     def __init__(
-        self, resource_name: str, connection_type: Connection, port: Optional[None]
+        self, resource_name: str, connection_type: Connection, port: Optional[int] = None
     ) -> None:
         if connection_type == Connection.SERIAL:
             self.client = client.ModbusSerialClient(
                 port=resource_name,
-                framer=rtu_framer,
+                framer=rtu_framer.sock,
                 stopbits=1,
                 bytesize=8,
                 parity="E",
@@ -49,7 +49,7 @@ class CPA1110:
             ip_address(resource_name)
             self.client = client.ModbusTcpClient(
                 host=resource_name,
-                framer=rtu_framer,
+                framer=socket_framer.ModbusSocketFramer,
             )
         else:
             raise ValueError("Cannot connect to device.")
@@ -76,7 +76,7 @@ class CPA1110:
             Optional[bool]: _description_
         """
         read_input_register_response = self.client.read_input_registers(
-            1, count=33, unit=16
+            1, count=33, slave=16
         )
         if isinstance(read_input_register_response, ModbusIOException):
             raise read_input_register_response
