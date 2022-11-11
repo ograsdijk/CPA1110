@@ -3,6 +3,7 @@ from ipaddress import ip_address
 from typing import Callable, Optional
 
 from pymodbus import client
+from pymodbus.constants import Defaults
 from pymodbus.exceptions import ModbusIOException
 from pymodbus.framer import rtu_framer, socket_framer
 from pymodbus.register_read_message import ReadInputRegistersResponse
@@ -45,7 +46,7 @@ class CPA1110:
         self,
         resource_name: str,
         connection_type: Connection,
-        port: Optional[int] = None,
+        port: int = Defaults.TcpPort,
     ) -> None:
         if connection_type == Connection.SERIAL:
             self.client = client.ModbusSerialClient(
@@ -57,12 +58,12 @@ class CPA1110:
                 baudrate=9600,
             )
         elif connection_type == Connection.TCP:
-            # assert port is not None, 'Supply a port number'
             # verify IP address is in a valid format
             ip_address(resource_name)
             self.client = client.ModbusTcpClient(
                 host=resource_name,
                 framer=socket_framer.ModbusSocketFramer,
+                port = port
             )
         else:
             raise ValueError("Cannot connect to device.")
