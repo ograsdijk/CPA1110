@@ -7,7 +7,7 @@ The Cryomech CPA1110 compressor supports remote monitoring through serial
 
 ## Example
 ```Python
-from CPA1110 import CPA1110, Connection
+from cpa1110 import CPA1110, Connection
 
 compressor = CPA1110("192.168.1.10", connection_type = Connection.TCP)
 

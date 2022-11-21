@@ -6,7 +6,7 @@ authors = ["ograsdijk <o.grasdijk@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.8"
 pymodbus = "^3.0.0"
 pyserial-asyncio = "^0.6"
 
