@@ -1,4 +1,4 @@
-from enum import IntEnum, auto
+from enum import IntEnum, IntFlag, auto
 
 
 class Connection(IntEnum):
@@ -33,7 +33,7 @@ class OperatingState(IntEnum):
     RECOVERED_FROM_ERROR = 15
 
 
-class Warnings(IntEnum):
+class Warnings(IntFlag):
     NO_WARNINGS = 0
     COOLANT_IN_HIGH = 1
     COOLANT_IN_LOW = 2
@@ -54,8 +54,8 @@ class Warnings(IntEnum):
     COLD_HEAD_MOTOR_STALL = 524288
 
 
-class Errors(IntEnum):
-    NO_WARNINGS = 0
+class Errors(IntFlag):
+    NO_ERRORS = 0
     COOLANT_IN_HIGH = 1
     COOLANT_IN_LOW = 2
     COOLANT_OUT_HIGH = 4
@@ -72,5 +72,6 @@ class Errors(IntEnum):
     DELTA_PRESSURE_LOW = 8192
     MOTOR_CURRENT_LOW = 16384
     THREE_PHASE_ERROR = 32768
+    POWER_SUPPLY_ERROR = 65536
     STATIC_PRESSURE_HIGH = 131072
     STATIC_PRESSURE_LOW = 262144

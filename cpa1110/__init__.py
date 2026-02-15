@@ -1,12 +1,13 @@
-from .device import CPA1110
+from .device import CPA1110, CPASnapshot
 from .enums import (
     Connection,
+    Errors,
     OperatingState,
     PressureUnits,
     TemperatureUnits,
     Warnings,
-    Errors,
 )
+from .exceptions import CPA1110Error, CPAConnectionError, CPAProtocolError
 
 __all__ = [
     "CPA1110",
@@ -16,4 +17,8 @@ __all__ = [
     "OperatingState",
     "Warnings",
     "Errors",
+    "CPASnapshot",
+    "CPA1110Error",
+    "CPAConnectionError",
+    "CPAProtocolError",
 ]
