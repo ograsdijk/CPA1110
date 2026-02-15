@@ -21,6 +21,31 @@ For local development:
 uv sync
 ```
 
+## Publishing to PyPI (manual)
+
+One-time setup:
+
+1. Create an account on https://pypi.org
+2. Create an API token at https://pypi.org/manage/account/token/
+3. Configure your token for upload (for example in `~/.pypirc`)
+
+Release flow:
+
+1. Bump `version` in `pyproject.toml`.
+2. Build the package:
+
+```bash
+python -m pip install --upgrade build twine
+python -m build
+python -m twine check dist/*
+```
+
+3. Upload to PyPI:
+
+```bash
+python -m twine upload dist/*
+```
+
 ## Example
 
 Using a context manager:

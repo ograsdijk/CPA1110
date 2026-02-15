@@ -1,14 +1,30 @@
 [project]
 name = "cpa1110"
 version = "0.2.0"
-description = ""
+description = "Python interface for the Cryomech CPA1110 compressor"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "ograsdijk", email = "o.grasdijk@gmail.com" }]
+license = { text = "MIT" }
+keywords = ["cryomech", "cpa1110", "modbus", "serial", "tcp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
 dependencies = [
     "pymodbus>=3.0.0,<4.0.0",
     "pyserial-asyncio>=0.6,<0.7",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ograsdijk/CPA1110"
+Repository = "https://github.com/ograsdijk/CPA1110"
+Issues = "https://github.com/ograsdijk/CPA1110/issues"
 
 [project.optional-dependencies]
 dev = [
