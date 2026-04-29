@@ -7,12 +7,19 @@ The Cryomech CPA1110 compressor supports remote monitoring through serial
 
 ## Installation
 
-This project now uses `uv` for dependency management.
+This project now uses `uv` for dependency management, but the package can also
+be installed with `pip`.
 
 Install the package with:
 
 ```bash
 uv add cpa1110
+```
+
+or:
+
+```bash
+pip install cpa1110
 ```
 
 For local development:

@@ -84,6 +84,7 @@ class CPA1110:
         self.device_id = device_id
         self.auto_refresh = auto_refresh
         self._connected = False
+        self.client: ModbusSerialClient | ModbusTcpClient
 
         if connection_type == Connection.SERIAL:
             self.client = ModbusSerialClient(
