@@ -1,6 +1,6 @@
 [project]
 name = "cpa1110"
-version = "0.2.0"
+version = "0.2.1"
 description = "Python interface for the Cryomech CPA1110 compressor"
 readme = "README.md"
 requires-python = ">=3.11"
