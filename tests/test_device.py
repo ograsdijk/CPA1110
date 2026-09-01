@@ -2,10 +2,14 @@ import struct
 from typing import Any
 
 import pytest
+from pymodbus.exceptions import ConnectionException, ModbusIOException
 
 from cpa1110.device import CPA1110
 from cpa1110.enums import Connection, Errors, OperatingState, Warnings
-from cpa1110.exceptions import CPAConnectionError, CPAProtocolError
+from cpa1110.exceptions import (
+    CPAConnectionError,
+    CPATransactionMismatchError,
+)
 
 
 def _encode_float(value: float) -> tuple[int, int]:
@@ -30,11 +34,14 @@ class _FakeWriteResponse:
 class _FakeClient:
     def __init__(self, *args, **kwargs):
         self.connected = False
+        self.connect_calls = 0
+        self.init_kwargs = kwargs
         self.read_calls = 0
         self.write_calls: list[tuple[int, int, int]] = []
         self.registers = [0] * 33
 
     def connect(self) -> bool:
+        self.connect_calls += 1
         self.connected = True
         return True
 
@@ -54,6 +61,22 @@ class _FakeClientNoneResponse(_FakeClient):
     def read_input_registers(self, address: int, count: int, device_id: int) -> Any:
         self.read_calls += 1
         return None
+
+
+class _FakeClientReadFailure(_FakeClient):
+    failure: Exception = ModbusIOException(
+        "ERROR: request uses transaction id=9 but received 8."
+    )
+
+    def read_input_registers(self, address: int, count: int, device_id: int) -> Any:
+        self.read_calls += 1
+        raise self.failure
+
+
+class _FakeClientWriteFailure(_FakeClient):
+    def write_register(self, address: int, value: int, device_id: int):
+        self.write_calls.append((address, value, device_id))
+        raise ModbusIOException("No response received after 0 retries")
 
 
 def test_auto_refresh_true_reads_on_get(monkeypatch):
@@ -129,7 +152,7 @@ def test_disconnected_access_raises_typed_connection_error(monkeypatch):
         _ = compressor.operating_state
 
 
-def test_protocol_error_on_none_response(monkeypatch):
+def test_no_response_invalidates_connection(monkeypatch):
     monkeypatch.setattr("cpa1110.device.ModbusTcpClient", _FakeClientNoneResponse)
 
     compressor = CPA1110(
@@ -139,5 +162,60 @@ def test_protocol_error_on_none_response(monkeypatch):
     )
     compressor.connect()
 
-    with pytest.raises(CPAProtocolError):
+    with pytest.raises(CPAConnectionError):
         compressor.refresh()
+
+    assert not compressor.is_connected
+
+
+def test_transaction_mismatch_invalidates_and_explicit_reconnects(monkeypatch):
+    monkeypatch.setattr("cpa1110.device.ModbusTcpClient", _FakeClientReadFailure)
+    compressor = CPA1110(
+        "127.0.0.1", connection_type=Connection.TCP, auto_connect=False
+    )
+    compressor.connect()
+    client: Any = compressor.client
+
+    with pytest.raises(CPATransactionMismatchError) as exc_info:
+        compressor.refresh()
+
+    assert exc_info.value.expected_transaction_id == 9
+    assert exc_info.value.received_transaction_id == 8
+    assert not compressor.is_connected
+    assert not client.connected
+
+    compressor.connect()
+    assert compressor.is_connected
+    assert client.connect_calls == 2
+
+
+def test_fatal_tcp_error_invalidates_connection(monkeypatch):
+    class FatalClient(_FakeClientReadFailure):
+        failure = ConnectionException("connection reset")
+
+    monkeypatch.setattr("cpa1110.device.ModbusTcpClient", FatalClient)
+    compressor = CPA1110(
+        "127.0.0.1", connection_type=Connection.TCP, auto_connect=False
+    )
+    compressor.connect()
+
+    with pytest.raises(CPAConnectionError, match="connection reset"):
+        compressor.refresh()
+
+    assert not compressor.is_connected
+
+
+def test_ambiguous_control_write_is_not_retried(monkeypatch):
+    monkeypatch.setattr("cpa1110.device.ModbusTcpClient", _FakeClientWriteFailure)
+    compressor = CPA1110(
+        "127.0.0.1", connection_type=Connection.TCP, auto_connect=False
+    )
+    compressor.connect()
+    client: Any = compressor.client
+
+    with pytest.raises(CPAConnectionError):
+        compressor.enable_compressor()
+
+    assert client.write_calls == [(1, 0x0001, 16)]
+    assert not compressor.is_connected
+    assert client.init_kwargs["retries"] == 0

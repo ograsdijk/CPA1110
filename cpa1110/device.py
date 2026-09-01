@@ -1,15 +1,20 @@
 """Synchronous client for reading and controlling a Cryomech CPA1110."""
 
+import re
 from dataclasses import dataclass
 from ipaddress import ip_address
-from typing import Any
+from typing import Any, NoReturn
 
 from pymodbus.client import ModbusSerialClient, ModbusTcpClient
-from pymodbus.exceptions import ModbusIOException
+from pymodbus.exceptions import ConnectionException, ModbusIOException
 from pymodbus.framer import FramerType
 
 from cpa1110.attributes import FloatProperty, to_float, to_int
-from cpa1110.exceptions import CPAConnectionError, CPAProtocolError
+from cpa1110.exceptions import (
+    CPAConnectionError,
+    CPAProtocolError,
+    CPATransactionMismatchError,
+)
 
 from .enums import (
     Connection,
@@ -61,6 +66,10 @@ class CPA1110:
     delta_pressure_average = FloatProperty(22, 23)
     motor_current = FloatProperty(24, 25)
     hours_of_operation = FloatProperty(26, 27)
+    _TRANSACTION_MISMATCH_RE = re.compile(
+        r"transaction id=(?P<expected>\d+).*received (?P<received>\d+)",
+        re.IGNORECASE,
+    )
 
     def __init__(
         self,
@@ -68,6 +77,7 @@ class CPA1110:
         connection_type: Connection,
         port: int = 502,
         device_id: int = 16,
+        timeout_s: float = 3.0,
         auto_refresh: bool = True,
         auto_connect: bool = True,
     ) -> None:
@@ -78,6 +88,7 @@ class CPA1110:
             connection_type: Transport type (`Connection.TCP` or `Connection.SERIAL`).
             port: TCP port when using TCP transport.
             device_id: Modbus device/slave identifier.
+            timeout_s: Bounded transport response timeout in seconds.
             auto_refresh: Refresh cached registers automatically on property access.
             auto_connect: Connect and perform an initial refresh during initialization.
         """
@@ -94,11 +105,18 @@ class CPA1110:
                 bytesize=8,
                 parity="E",
                 baudrate=9600,
+                timeout=timeout_s,
+                retries=0,
             )
         elif connection_type == Connection.TCP:
             # verify IP address is in a valid format
             ip_address(resource_name)
-            self.client = ModbusTcpClient(host=resource_name, port=port)
+            self.client = ModbusTcpClient(
+                host=resource_name,
+                port=port,
+                timeout=timeout_s,
+                retries=0,
+            )
         else:
             raise CPAConnectionError("Unsupported connection type")
 
@@ -122,15 +140,43 @@ class CPA1110:
         """Open the Modbus connection."""
         if self._connected:
             return
-        connected = self.client.connect()
+        try:
+            connected = self.client.connect()
+        except (ConnectionException, OSError) as exc:
+            self._invalidate_connection()
+            raise CPAConnectionError(f"Failed to connect to CPA1110: {exc}") from exc
         if connected is False:
+            self._invalidate_connection()
             raise CPAConnectionError("Failed to connect to CPA1110")
         self._connected = True
 
     def close(self) -> None:
         """Close the Modbus connection."""
-        self.client.close()
+        self._invalidate_connection()
+
+    @property
+    def is_connected(self) -> bool:
+        """Return whether CPA considers the current connection trustworthy."""
+        return self._connected
+
+    def _invalidate_connection(self) -> None:
+        """Mark the connection unhealthy and best-effort close pymodbus state."""
         self._connected = False
+        try:
+            self.client.close()
+        except OSError:
+            pass
+
+    def _raise_communication_failure(self, exc: Exception) -> NoReturn:
+        """Invalidate and translate a pymodbus communication failure."""
+        self._invalidate_connection()
+        mismatch = self._TRANSACTION_MISMATCH_RE.search(str(exc))
+        if mismatch is not None:
+            raise CPATransactionMismatchError(
+                int(mismatch.group("expected")),
+                int(mismatch.group("received")),
+            ) from exc
+        raise CPAConnectionError(f"CPA1110 communication failed: {exc}") from exc
 
     def _ensure_connected(self) -> None:
         """Raise if the client is not connected."""
@@ -152,7 +198,14 @@ class CPA1110:
         Start the compressor
         """
         self._ensure_connected()
-        response = self.client.write_register(1, 0x0001, device_id=self.device_id)
+        try:
+            response = self.client.write_register(
+                1, 0x0001, device_id=self.device_id
+            )
+        except (ConnectionException, ModbusIOException, OSError) as exc:
+            self._raise_communication_failure(exc)
+        if isinstance(response, ModbusIOException):
+            self._raise_communication_failure(response)
         if hasattr(response, "isError") and response.isError():
             raise CPAProtocolError(f"Modbus exception response: {response}")
 
@@ -161,19 +214,31 @@ class CPA1110:
         Stop the compressor
         """
         self._ensure_connected()
-        response = self.client.write_register(1, 0x00FF, device_id=self.device_id)
+        try:
+            response = self.client.write_register(
+                1, 0x00FF, device_id=self.device_id
+            )
+        except (ConnectionException, ModbusIOException, OSError) as exc:
+            self._raise_communication_failure(exc)
+        if isinstance(response, ModbusIOException):
+            self._raise_communication_failure(response)
         if hasattr(response, "isError") and response.isError():
             raise CPAProtocolError(f"Modbus exception response: {response}")
 
     def _read_input_register_response(self) -> Any:
         """Read and validate the raw input-register response."""
-        read_input_register_response = self.client.read_input_registers(
-            1, count=33, device_id=self.device_id
-        )
+        try:
+            read_input_register_response = self.client.read_input_registers(
+                1, count=33, device_id=self.device_id
+            )
+        except (ConnectionException, ModbusIOException, OSError) as exc:
+            self._raise_communication_failure(exc)
         if isinstance(read_input_register_response, ModbusIOException):
-            raise CPAProtocolError("I/O error while reading input registers") from read_input_register_response
+            self._raise_communication_failure(read_input_register_response)
         if read_input_register_response is None:
-            raise CPAProtocolError("No response received from CPA1110")
+            self._raise_communication_failure(
+                ModbusIOException("No response received from CPA1110")
+            )
         if (
             hasattr(read_input_register_response, "isError")
             and read_input_register_response.isError()

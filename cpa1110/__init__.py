@@ -7,7 +7,12 @@ from .enums import (
     TemperatureUnits,
     Warnings,
 )
-from .exceptions import CPA1110Error, CPAConnectionError, CPAProtocolError
+from .exceptions import (
+    CPA1110Error,
+    CPAConnectionError,
+    CPAProtocolError,
+    CPATransactionMismatchError,
+)
 
 __all__ = [
     "CPA1110",
@@ -21,4 +26,5 @@ __all__ = [
     "CPA1110Error",
     "CPAConnectionError",
     "CPAProtocolError",
+    "CPATransactionMismatchError",
 ]
